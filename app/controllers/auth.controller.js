@@ -16,11 +16,27 @@ exports.singup = (req, res) => {
         user_type: req.body.user_type
     }).then(user => {
         user.password = "";
-        res.status(httpStatus.CREATED).send({ message: "Record successfully saved!", user: user });
+        res.status(httpStatus.CREATED).send({
+          data: user,
+          errors: [],
+          warnings: [],
+        })
+        //res.status(httpStatus.CREATED).send({ message: "Record successfully saved!", user: user });
     }).catch(err => {
         res.status(500).send({
-            message: err.message || "Some error occurred while creating the record"
-        });
+          data: {},
+          errors: [
+            {
+              code: 'ERR0000',
+              message: 'INTERNAL_SERVER_ERROR',
+              description: 'An unexpected error has occurred. Please try again later.',
+            }
+          ],
+          warnings: [],
+        })
+        // res.status(500).send({
+        //     message: err.message || "Some error occurred while creating the record"
+        // });
     });
 }
 
