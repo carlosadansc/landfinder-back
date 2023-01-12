@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
+    "dev:dev": "nodemon -r dotenv/config index.js dotenv_config_path=.env.dev",
     "start": "node ."
   },
   "keywords": [
