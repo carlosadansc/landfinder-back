@@ -22,7 +22,7 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false,
         },
         url_doc: {
-            type: sequelize.TEXT,
+            type: Sequelize.TEXT,
             allowNull: false,
         },
         signed: {
