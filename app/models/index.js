@@ -27,6 +27,7 @@ db.sequelize = sequelize;
 db.user = require("../models/user.model.js")(sequelize, Sequelize);
 db.property = require("../models/property.model.js")(sequelize, Sequelize);
 db.company = require("../models/company.model.js")(sequelize, Sequelize);
+db.contract = require("../models/contract.model.js")(sequelize, Sequelize);
 
 //Create relations one user to many properties, generate foreignKey 
 db.user.hasMany(db.property, {
@@ -36,6 +37,11 @@ db.user.hasMany(db.property, {
 //Create relations one user to one company, generate foreignKey 
 db.user.hasOne(db.company, {
   foreignKey: 'user_id'
+});
+
+//Create relations one property to one contract, generate foreignKey 
+db.property.hasOne(db.contract, {
+  foreignKey: 'property_id'
 });
 
 module.exports = db;
