@@ -1,5 +1,6 @@
 const jwtConfig = require("../config/jwt.config");
 const db = require("../models");
+const httpStatus = require("../common/HttpStatusCodes")
 const User = db.user;
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcrypt");
@@ -15,7 +16,7 @@ exports.singup = (req, res) => {
         user_type: req.body.user_type
     }).then(user => {
         user.password = "";
-        res.status(201).send({ message: "Record successfully saved!", user: user });
+        res.status(httpStatus.CREATED).send({ message: "Record successfully saved!", user: user });
     }).catch(err => {
         res.status(500).send({
             message: err.message || "Some error occurred while creating the record"
