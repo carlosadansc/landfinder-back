@@ -1,5 +1,8 @@
 const db = require("../models");
 const User = db.user;
+const httpStatus = require("../common/HttpStatusCodes");
+const errorCode = require("../common/ErroCodes");
+const logger = require("../utils/Logger")
 
 validatePassword = (req, res, next) => {
   // password min 6 chars
@@ -27,9 +30,8 @@ checkDuplicateEmail = (req, res, next) => {
     }
   }).then(user => {
     if (user) {
-      res.status(400).send({
-        message: "Failed! Email is already in use!"
-      });
+      logger.log("POST", "/auth/signup", req.body.email, errorCode.ERR0013.title, false);
+      res.status(httpStatus.CONFLICT).send({ data: {}, errors: [errorCode.ERR0013], });
       return;
     }
 

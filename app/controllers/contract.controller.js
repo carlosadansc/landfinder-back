@@ -1,5 +1,8 @@
 const db = require("../models");
 const Contract = db.contract;
+const httpStatus = require("../common/HttpStatusCodes");
+const errorCode = require("../common/ErroCodes");
+const logger = require("../utils/Logger")
 
 exports.create = (req, res) => {
     //Save contract to data base
@@ -13,11 +16,10 @@ exports.create = (req, res) => {
         signed: req.bod.signed,
         status: req.bod.status
     }).then(contract => {
-        res.status(201).send({ message: "Record successfully saved!", contract: contract });
+        res.status(httpStatus.CREATED).send({ data: contract, errors: [], warnings: [],});
     }).catch(err => {
-        res.status(500).send({
-            message: err.message || "Some error occurred while creating the record"
-        });
+        logger.log("POST", "/contract/create", "", err, false);
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
     });
 }
 

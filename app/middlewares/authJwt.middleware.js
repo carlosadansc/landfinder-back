@@ -1,20 +1,23 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config/jwt.config.js");
+const httpStatus = require("../common/HttpStatusCodes");
+const errorCode = require("../common/ErroCodes");
+const logger = require("../utils/Logger")
 
 
 const { TokenExpiredError } = jwt;
 
 const catchError = (err, res) => {
     if (err instanceof TokenExpiredError) {
-        return res.status(401).send({ message: "Unauthorized! Access Token was expired!" });
+        return res.status(httpStatus.UNAUTHORIZED).send({ data: {}, errors: [errorCode.ERR0019], });
     }
-    return res.status(401).send({ message: "Unauthorized!" });
+    return res.status(httpStatus.UNAUTHORIZED).send({ data: {}, errors: [errorCode.ERR0018], });
 }
 
 verifyToken = (req, res, next) => {
     let token = req.headers["authorization"];
     if (!token) {
-        return res.status(403).send({ message: "No token provided!" });
+        return res.status(httpStatus.FORBIDDEN).send({ data: {}, errors: [errorCode.ERR0018], });
     }
 
     token = token.replace('Bearer ', '')

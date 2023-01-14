@@ -1,109 +1,97 @@
 const jwtConfig = require("../config/jwt.config");
 const db = require("../models");
-const httpStatus = require("../common/HttpStatusCodes")
+const logger = require("../utils/Logger")
+const { createToken } = require("../utils/TokenUtils")
+const { sendMailForgotPassword } = require("../utils/Mailer")
+const httpStatus = require("../common/HttpStatusCodes");
+const errorCode = require("../common/ErroCodes");
 const User = db.user;
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcrypt");
 
+
 exports.singup = (req, res) => {
-    //Save user to data base
-    User.create({
-        name: req.body.name,
-        lastname: req.body.lastname,
-        email: req.body.email,
-        phone: req.body.phone,
-        password: bcrypt.hashSync(req.body.password, 8),
-        user_type: req.body.user_type
-    }).then(user => {
-        user.password = "";
-        res.status(httpStatus.CREATED).send({
-          data: user,
-          errors: [],
-          warnings: [],
-        })
-        //res.status(httpStatus.CREATED).send({ message: "Record successfully saved!", user: user });
-    }).catch(err => {
-        res.status(500).send({
-          data: {},
-          errors: [
-            {
-              code: 'ERR0000',
-              message: 'INTERNAL_SERVER_ERROR',
-              description: 'An unexpected error has occurred. Please try again later.',
-            }
-          ],
-          warnings: [],
-        })
-        // res.status(500).send({
-        //     message: err.message || "Some error occurred while creating the record"
-        // });
-    });
+  //Save user to data base
+  User.create({
+    name: req.body.name,
+    lastname: req.body.lastname,
+    email: req.body.email,
+    phone: req.body.phone,
+    password: bcrypt.hashSync(req.body.password, 8),
+    user_type: req.body.user_type
+  }).then(user => {
+    user.password = "";
+    res.status(httpStatus.CREATED).send({ data: user, errors: [], warnings: [],});
+    //res.status(httpStatus.CREATED).send({ message: "Record successfully saved!", user: user });
+  }).catch(err => {
+    logger.log("POST", "/auth/singup", "", err, false);
+    res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000],warnings: [],})
+    // res.status(500).send({
+    //     message: err.message || "Some error occurred while creating the record"
+    // });
+  });
 }
 
 exports.signin = (req, res) => {
-    User.findOne({ where: { email: req.body.email } }).then(user => {
+  User.findOne({ where: { email: req.body.email } }).then(user => {
 
-        if (!user) {
-            return res.status(404).send({ message: "User Not found." });
-        }
+    if (!user) {
+      logger.log("POST", "/auth/signin", req.body.email, errorCode.ERR0001.title, false);
+      return res.status(httpStatus.NOT_FOUND).send({ data: {}, errors: [errorCode.ERR0001], });
+    }
 
-        var passwordIsValid = bcrypt.compareSync(
-            req.body.password,
-            user.password
-        );
+    var passwordIsValid = bcrypt.compareSync(
+      req.body.password,
+      user.password
+    );
 
-        if (!passwordIsValid) {
-            return res.status(401).send({
-                accessToken: null,
-                message: "Invalid Password!"
-            });
-        }
+    if (!passwordIsValid) {
+      logger.log("POST", "/auth/signin", req.body.email, errorCode.ERR0017.title, false);
+      return res.status(httpStatus.UNAUTHORIZED).send({ data: {}, errors: [errorCode.ERR0017], });
+    }
 
-        var token = jwt.sign({ id: user.id }, jwtConfig.secret, {
-            expiresIn: jwtConfig.jwtExpiration // 24 hours
-        });
-
-        user.password = "";
-
-        //res.cookie('auth-token', token, { httpOnly: true, secure: false });
-
-        res.status(200).send({ message: "User logged in.", token: token, user: user });
-        
-    }).catch(err => {
-        res.status(500).send({ message: err.message });
+    var token = jwt.sign({ id: user.id }, jwtConfig.secret, {
+      expiresIn: jwtConfig.jwtExpiration // 24 hours
     });
+
+    user.password = "";
+
+    //res.cookie('auth-token', token, { httpOnly: true, secure: false });
+
+    res.status(httpStatus.ACCEPTED).send({ data: { token: token, user: user }, errors: [], });
+
+  }).catch(err => {
+    logger.log("POST", "/auth/signin", req.body.email, err, false);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
+  });
 }
 
-exports.logout = (req, res) => {
-    res.clearCookie('auth-token');
-    res.status(200).send({ message: 'User logged out.' });
-}
+/* exports.logout = (req, res) => {
+  res.clearCookie('auth-token');
+  res.status(200).send({ message: 'User logged out.' });
+} */
 
-exports.resetPassword = (req, res) => {
-    User.findByEmail(req.params.email, (err, results) => {
-      if (err) {
-        if (err.kind === "not_found") {
-          return res.status(404).send({
-            message: "Not found record: " + req.params.email
-          });
-        } else {
-          return res.status(500).send({
-            message: "Error retrieving record: " + req.params.email
-          });
-        }
-      } else {
-        var newRefreshToken = RefreshToken.create(results, (tErr, tResults) => { });
-        sendMail(results.email, newRefreshToken, results.id).then(()=>{
-          return res.status(200).send({
-            message: "Check your email for a link to reset your password."
-          });
-        }).catch((err) => {
-          return res.status(400).send({
-            message: err
-          });
-        });
-       
-      } 
-    });
-  };
-  
+exports.forgotPassword = (req, res) => {
+
+  User.findOne({ where: { email: req.params.email } }).then(user => {
+
+    if (!user) {
+      logger.log("GET", "/auth/forgot-password", req.params.email, errorCode.ERR0001.title, false);
+      return res.status(httpStatus.NOT_FOUND).send({ data: {}, errors: [errorCode.ERR0001], });
+    }
+
+    var _newToken = createToken(user.email, 120);
+
+    sendMailForgotPassword(user.email, _newToken, user.id).then(() => {
+        res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
+      }).catch((err) => {
+        logger.log("GET", "/auth/forgot-password", req.params.email, err, false);
+        return res.status(httpStatus.BAD_REQUEST).send({ data: {}, errors: [errorCode.ERR0008], });
+      });
+
+  }).catch(err => {
+    logger.log("GET", "/auth/forgot-password", req.params.email, err, false);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
+  });
+
+};

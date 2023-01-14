@@ -1,5 +1,8 @@
 const db = require("../models");
 const Company = db.company;
+const httpStatus = require("../common/HttpStatusCodes");
+const errorCode = require("../common/ErroCodes");
+const logger = require("../utils/Logger")
 
 exports.create = (req, res) => {
     //Save company to data base
@@ -23,11 +26,11 @@ exports.create = (req, res) => {
         investment_mount: req.body.investment_mount,
         type: req.body.type
     }).then(company => {
-        res.status(201).send({ message: "Record successfully saved!", company: company });
+        res.status(httpStatus.CREATED).send({ data: company, errors: [], warnings: [],});
     }).catch(err => {
-        res.status(500).send({
-            message: err.message || "Some error occurred while creating the record"
-        });
+        logger.log("POST", "/company/create", "", err, false);
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
+
     });
 }
 

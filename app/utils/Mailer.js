@@ -1,10 +1,11 @@
 const nodemailer = require("nodemailer");
 require("dotenv").config();
+const { resetPasswordTemplate } = require("../utils/MjmlTemplates");
 
-const sendEmail = async (email, resetToken, id_user) => {
 
-    //const link = `${process.env.CLIENT_URL}/passwordReset?token=${resetToken}&id=${id_user}`;
-    const html = `<p>You requested for reset password, kindly use this <a href="${process.env.CLIENT_URL}/passwordReset?token=${resetToken}&id=${id_user}">link</a> to reset your password</p>`;
+exports.sendMailForgotPassword = async (email, token, id_user = 1) => {
+    const link = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
+    const htmlTemplate = resetPasswordTemplate(link);
 
     try {
         const transporter = nodemailer.createTransport({
@@ -21,7 +22,7 @@ const sendEmail = async (email, resetToken, id_user) => {
             from: '"Forgot password" <inddormx@gmail.com>',
             to: email,
             subject: "Inddor Reset Password",
-            html: html,
+            html: htmlTemplate,
         });
 
         console.log("email sent sucessfully");
@@ -29,5 +30,3 @@ const sendEmail = async (email, resetToken, id_user) => {
         console.log(error, "email not sent");
     }
 };
-
-module.exports = sendEmail;

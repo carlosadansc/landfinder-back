@@ -11,7 +11,7 @@ const sequelize = new Sequelize(
     operatorsAliases: 0,
     port: config.PORT,
     ssl: config.SSL,
-    
+    logging: config.logging,
     pool: {
       max: config.pool.max,
       min: config.pool.min,

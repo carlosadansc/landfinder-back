@@ -1,5 +1,8 @@
 const db = require("../models");
 const Property = db.property;
+const httpStatus = require("../common/HttpStatusCodes");
+const errorCode = require("../common/ErroCodes");
+const logger = require("../utils/Logger")
 
 exports.create = (req, res) => {
     //Save property to data base
@@ -36,11 +39,10 @@ exports.create = (req, res) => {
         cas: req.body.cas,
         cos: req.body.cos
     }).then(property => {
-        res.status(201).send({ message: "Record successfully saved!", property: property });
+        res.status(httpStatus.CREATED).send({ data: property, errors: [], warnings: [],});
     }).catch(err => {
-        res.status(500).send({
-            message: err.message || "Some error occurred while creating the record"
-        });
+        logger.log("POST", "/property/create", "", err, false);
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
     });
 }
 

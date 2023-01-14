@@ -4,6 +4,6 @@ module.exports = app => {
   
     app.post("/auth/signup", [verifySignUp.checkDuplicateEmail, verifySignUp.validatePassword], auth.singup);
     app.post("/auth/signin", auth.signin);
-    app.post("/auth/logout", auth.logout);
-
+    //app.post("/auth/logout", auth.logout);
+    app.get("/auth/forgot-password/:email", auth.forgotPassword);
   };            
