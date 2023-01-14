@@ -37,7 +37,6 @@ require("./app/routes/company.routes.js")(app);
 
 // Middleware para Vue.js router modo history
 const history = require('connect-history-api-fallback');
-const { compareSync } = require("bcrypt");
 app.use(history());
 
 // set port, listen for requests
