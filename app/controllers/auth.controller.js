@@ -83,7 +83,7 @@ exports.forgotPassword = (req, res) => {
     var _newToken = createToken(user.email, 120);
 
     sendMailForgotPassword(user.email, _newToken, user.id).then(() => {
-      res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
+      res.status(httpStatus.ACCEPTED).send({ data: {}, errors: [], });
     }).catch((err) => {
       logger.log("GET", "/auth/forgot-password", req.params.email, err, false);
       return res.status(httpStatus.BAD_REQUEST).send({ data: {}, errors: [errorCode.ERR0008], });
@@ -103,7 +103,7 @@ exports.resetPassword = (req, res) => {
       email: req.body.email
     }
   }).then(data => {
-    res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
+    res.status(httpStatus.ACCEPTED).send({ data: {}, errors: [], });
   }).catch(err => {
     logger.log("GET", "/auth/reset-password", "", err, false);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
@@ -122,7 +122,7 @@ exports.sendEmailConfirmation = (req, res) => {
     var _newToken = createToken(user.email, 120);
 
     sendConfirmEmail(user.email, _newToken).then(() => {
-      res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
+      res.status(httpStatus.ACCEPTED).send({ data: {}, errors: [], });
     }).catch((err) => {
       logger.log("GET", "/auth/send-email-confirmation", req.params.email, err, false);
       return res.status(httpStatus.BAD_REQUEST).send({ data: {}, errors: [errorCode.ERR0008], });
@@ -142,7 +142,7 @@ exports.confirmEmail = (req, res) => {
       email: req.params.email
     }
   }).then(data => {
-    res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
+    res.status(httpStatus.ACCEPTED).send({ data: {}, errors: [], });
   }).catch(err => {
     logger.log("GET", "/auth/confirm-email", "", err, false);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
