@@ -2,7 +2,7 @@ const jwtConfig = require("../config/jwt.config");
 const db = require("../models");
 const logger = require("../utils/Logger")
 const { createToken } = require("../utils/TokenUtils")
-const { sendMailForgotPassword } = require("../utils/Mailer")
+const { sendMailForgotPassword, sendConfirmEmail } = require("../utils/Mailer")
 const httpStatus = require("../common/HttpStatusCodes");
 const errorCode = require("../common/ErroCodes");
 const User = db.user;
@@ -21,11 +21,11 @@ exports.singup = (req, res) => {
     user_type: req.body.user_type
   }).then(user => {
     user.password = "";
-    res.status(httpStatus.CREATED).send({ data: user, errors: [], warnings: [],});
+    res.status(httpStatus.CREATED).send({ data: user, errors: [], warnings: [], });
     //res.status(httpStatus.CREATED).send({ message: "Record successfully saved!", user: user });
   }).catch(err => {
     logger.log("POST", "/auth/singup", "", err, false);
-    res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000],warnings: [],})
+    res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], warnings: [], })
     // res.status(500).send({
     //     message: err.message || "Some error occurred while creating the record"
     // });
@@ -83,15 +83,68 @@ exports.forgotPassword = (req, res) => {
     var _newToken = createToken(user.email, 120);
 
     sendMailForgotPassword(user.email, _newToken, user.id).then(() => {
-        res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
-      }).catch((err) => {
-        logger.log("GET", "/auth/forgot-password", req.params.email, err, false);
-        return res.status(httpStatus.BAD_REQUEST).send({ data: {}, errors: [errorCode.ERR0008], });
-      });
+      res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
+    }).catch((err) => {
+      logger.log("GET", "/auth/forgot-password", req.params.email, err, false);
+      return res.status(httpStatus.BAD_REQUEST).send({ data: {}, errors: [errorCode.ERR0008], });
+    });
 
   }).catch(err => {
     logger.log("GET", "/auth/forgot-password", req.params.email, err, false);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
   });
 
+};
+
+exports.resetPassword = (req, res) => {
+  User.update({ 
+    password:  bcrypt.hashSync(req.body.password, 8)}, {
+    where: {
+      email: req.body.email
+    }
+  }).then(data => {
+    res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
+  }).catch(err => {
+    logger.log("GET", "/auth/reset-password", "", err, false);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
+  });
+};
+
+exports.sendEmailConfirmation = (req, res) => {
+
+  User.findOne({ where: { email: req.params.email } }).then(user => {
+
+    if (!user) {
+      logger.log("GET", "/auth/send-email-confirmation", req.params.email, errorCode.ERR0001.title, false);
+      return res.status(httpStatus.NOT_FOUND).send({ data: {}, errors: [errorCode.ERR0001], });
+    }
+
+    var _newToken = createToken(user.email, 120);
+
+    sendConfirmEmail(user.email, _newToken).then(() => {
+      res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
+    }).catch((err) => {
+      logger.log("GET", "/auth/send-email-confirmation", req.params.email, err, false);
+      return res.status(httpStatus.BAD_REQUEST).send({ data: {}, errors: [errorCode.ERR0008], });
+    });
+
+  }).catch(err => {
+    logger.log("GET", "/auth/send-email-confirmation", req.params.email, err, false);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
+  });
+
+};
+
+exports.confirmEmail = (req, res) => {
+  User.update({ 
+    email_confirmed: 1}, {
+    where: {
+      email: req.params.email
+    }
+  }).then(data => {
+    res.status(httpStatus.NO_CONTENT).send({ data: {}, errors: [], });
+  }).catch(err => {
+    logger.log("GET", "/auth/confirm-email", "", err, false);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ data: {}, errors: [errorCode.ERR0000], });
+  });
 };
